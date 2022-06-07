@@ -1,81 +1,55 @@
-const config = require("./config.json")
+// Importing Packages and Configfile
+const config = require("./config.json");
 const tmi = require('tmi.js');
-const {Discord ,Collection, MessageActionRow, MessageSelectMenu, MessageButton, Client, Intents, MessageEmbed  } = require('discord.js')
-const express = require("express")
-const fetch = require("node-fetch")
-const fs = require("fs")
+const { 
+  Client, 
+  MessageEmbed  
+} = require('discord.js');
+
+
+// Creating Discord.js (Discord) Client
 const bot = new Client({ 
-  intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES] });
+  intents: ["GUILDS", "GUILD_MESSAGES"] 
+});
 
-const bottoken = config.discordtoken
-const BOT_NAME = "Twitcher"
-const authentication = config.OAUTH
-
-const opts = {
+// Creating Tmi (Twitch) Client
+const BOT_NAME = "Twitcher";
+const client = new tmi.client({
   identity: {
     username: BOT_NAME,
-    password: authentication
+    password: config.OAUTH
   },
   channels: [
-    config.channel,
- 
+    config.channel
   ]
-};
+});
 
-
-const client = new tmi.client(opts);
-
-client.on('message', onMessageHandler);
-client.on('connected', onConnectedHandler);
-client.connect();
-
-
-function onConnectedHandler (addr, port) {
-  console.log(`* Connected to ${addr}:${port}`);
-}
-
-
-
-
-function onMessageHandler (target, context, msg, self, username, messaget) {
-
-const commandName = msg.trim();
-const embedD = new MessageEmbed()
-  .setTitle(`Chat: ${target}`)
-  .setDescription(commandName.toString())
-  .setColor('#ab19d1')
-  .setFooter('Twitch chat on Discord')
-  .setTimestamp()
+// sending an message from the Twitch Chat to Discord
+client.on('message', (target, context, msg, self, username, messaget) => {
+  const commandName = msg.trim().toString();
+  const embedD = new MessageEmbed()
+    .setTitle(`Chat: ${target}`)
+    .setDescription(commandName)
+    .setColor('#ab19d1')
+    .setFooter('Twitch chat on Discord')
+    .setTimestamp();
   
-  
+   bot.channels.cache.get(config.discordchannel).send({embeds: [embedD]});  
+});
 
-  
-   bot.channels.cache.get(config.discordchannel).send({embeds: [embedD]})
-}
+client.on('connected', (addr, port) => console.log(`* Connected to ${addr}:${port}`));
 
-
-
-
-
-
-
-
-
-
-
-
+// Changing the Bots Precense after logging in
 bot.once("ready", async  () => {
-  bot.user.setPresence({ activities: [{ name: `Twitch Chat: ${config.channel}` }], status: 'idle', type:"WATCHING" });
-})
+  bot.user.setPresence({ 
+    activities: [{ 
+      name: `Twitch Chat: ${config.channel}` 
+    }], 
+    status: 'idle', 
+    type:"WATCHING" 
+  });
+});
 
-
-
-
-
-
-
-
-
-
-
-bot.login(discordtoken)
+// Connecting,,,
+bot.login(config.discordtoken);
+client.connect();
